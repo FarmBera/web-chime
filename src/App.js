@@ -2,7 +2,7 @@
 import styled from "styled-components";
 import Clock from "react-live-clock";
 
-import "./App.css";
+import "./style/App.css";
 import Lists from "./components/lists";
 import ClockController from "./components/clock-controller";
 import Buttons from "./components/button";
@@ -21,10 +21,6 @@ function App() {
       <hr></hr>
 
       <ClockController />
-
-      <hr></hr>
-
-      <Buttons />
 
       <hr></hr>
 
