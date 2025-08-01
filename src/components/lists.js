@@ -4,7 +4,7 @@ import styled from "styled-components";
 function Lists() {
   return (
     <div className="Lists">
-      <body>Alert List Area</body>
+      <p>Alert List Area</p>
     </div>
   );
 }
