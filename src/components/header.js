@@ -4,7 +4,7 @@ import styled from "styled-components";
 function Headers() {
   return (
     <div className="Headers">
-      <header>Alert List Area</header>
+      <header>Header Area</header>
     </div>
   );
 }
