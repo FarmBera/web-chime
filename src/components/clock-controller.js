@@ -14,24 +14,19 @@ const wheelmod = "normal";
 const nums = Array.from({ length: 10 }, (_, i) => i);
 const nums_lim = Array.from({ length: 6 }, (_, i) => i);
 
-// selections
-// const selections_hour = { p0: nums_lim, p1: nums };
-// const selections_min = { p0: nums_lim, p1: nums };
-// const selections_sec = { p0: nums_lim, p1: nums };
-
-function renderOptions(options, selectedColor) {
-  return options.map((option) => (
-    <Picker.Item key={option} value={option}>
-      {({ selected }) => (
-        <div
-          className={
-            selected ? `font-semibold ${selectedColor}` : "text-neutral-400"
-          }
-        >
-          {option}
-        </div>
-      )}
-    </Picker.Item>
+function renderOptions(selections) {
+  return Object.keys(selections).map((name) => (
+    <Picker.Column key={name} name={name}>
+      {selections[name].map((option) => (
+        <Picker.Item key={option} value={option}>
+          {({ selected }) => (
+            <div className={selected ? `selected` : "text-neutral"}>
+              {option}
+            </div>
+          )}
+        </Picker.Item>
+      ))}
+    </Picker.Column>
   ));
 }
 
@@ -53,9 +48,16 @@ function ClockController() {
   const [pickerHourValue, setPickerHourValue] = useState({ p0: 0, p1: 0 });
   const [pickerMinValue, setPickerMinValue] = useState({ p0: 0, p1: 0 });
   const [pickerSecValue, setPickerSecValue] = useState({ p0: 0, p1: 0 });
+  /** mode
+   * 0: clock
+   * 1: custom time (timer)
+   */
   const [mode, setMode] = useState(0);
   const [clock, setClock] = useState("");
   const [reminder, setReminder] = useState([]);
+
+  // on first loading
+  // useEffect(() => {}, []);
 
   // update clock / check timer & alert
   useEffect(() => {
@@ -77,6 +79,23 @@ function ClockController() {
     }
   }, [clock]);
 
+  // on change mode
+  useEffect(() => {
+    if (mode == 0) {
+      setSelection_hour({
+        p0: Array.from({ length: 3 }, (_, i) => i),
+        p1: nums,
+      });
+    } else {
+      setSelection_hour({
+        p0: nums_lim,
+        p1: nums,
+      });
+    }
+
+    if (mode != 0) onClickResetBtn();
+  }, [mode]);
+
   // auto update clock variable
   const onChangeClockTime = (t) => {
     // console.log(t); // 1754053077959
@@ -94,6 +113,16 @@ function ClockController() {
     setPickerHourValue({ p0: 0, p1: 0 });
     setPickerMinValue({ p0: 0, p1: 0 });
     setPickerSecValue({ p0: 0, p1: 0 });
+    // setMode(0);
+  };
+
+  const onClickModeBtn = () => {
+    let m = mode;
+    if (++m > 1) {
+      setMode(0);
+      return;
+    }
+    setMode(m);
   };
 
   const onClickAlarmBtn = () => {
@@ -108,6 +137,8 @@ function ClockController() {
   const onClickStartBtn = () => {
     return null;
   };
+
+  const onClickStopBtn = () => {};
 
   const onClickValueBtn = (n, type) => {
     let value = 0;
@@ -179,6 +210,7 @@ function ClockController() {
       />
 
       <div></div>
+      <p>Mode: {mode}</p>
 
       {/* button area */}
       <TableWrapper>
@@ -189,13 +221,16 @@ function ClockController() {
                 <button onClick={onClickResetBtn}>Reset</button>
               </td>
               <td>
-                <button>Alarm</button>
+                <button onClick={onClickModeBtn}>Mode</button>
               </td>
               <td>
                 <button>Start</button>
               </td>
               <td>
                 <button>Stop</button>
+              </td>
+              <td>
+                <button>Alarm</button>
               </td>
             </tr>
           </tbody>
@@ -225,17 +260,8 @@ function ClockController() {
                     value={pickerHourValue}
                     onChange={setPickerHourValue}
                     wheelMode={wheelmod}
-                    // style={pickerStyle}
                   >
-                    {Object.keys(selections_hour).map((name) => (
-                      <Picker.Column key={name} name={name}>
-                        {selections_hour[name].map((option) => (
-                          <Picker.Item key={option} value={option}>
-                            {option}
-                          </Picker.Item>
-                        ))}
-                      </Picker.Column>
-                    ))}
+                    {renderOptions(selections_hour)}
                   </Picker>
                 </td>
                 <td className="col">:</td>
@@ -244,17 +270,8 @@ function ClockController() {
                     value={pickerMinValue}
                     onChange={setPickerMinValue}
                     wheelMode={wheelmod}
-                    // style={pickerStyle}
                   >
-                    {Object.keys(selections_min).map((name) => (
-                      <Picker.Column key={name} name={name}>
-                        {selections_min[name].map((option) => (
-                          <Picker.Item key={option} value={option}>
-                            {option}
-                          </Picker.Item>
-                        ))}
-                      </Picker.Column>
-                    ))}
+                    {renderOptions(selections_min)}
                   </Picker>
                 </td>
                 <td className="col">:</td>
@@ -263,18 +280,8 @@ function ClockController() {
                     value={pickerSecValue}
                     onChange={setPickerSecValue}
                     wheelMode={wheelmod}
-                    // style={pickerStyle}
-                    className="picker"
                   >
-                    {Object.keys(selections_sec).map((name) => (
-                      <Picker.Column key={name} name={name}>
-                        {selections_sec[name].map((option) => (
-                          <Picker.Item key={option} value={option}>
-                            <p className="selected">{option}</p>
-                          </Picker.Item>
-                        ))}
-                      </Picker.Column>
-                    ))}
+                    {renderOptions(selections_sec)}
                   </Picker>
                 </td>
               </tr>
@@ -368,19 +375,21 @@ const PickerWrapper = styled.div`
   /* display: table-column; */
   /* grid-template-columns: 1fr 1fr 1fr; */
   /* grid-template-rows: 1fr 1fr 1fr; */
+
+  .text-neutral {
+    color: #666;
+  }
+
+  .selected {
+    color: white;
+    font-weight: bold;
+  }
+
   /* size: 20px; */
   /* text-align: center; */
   /* align-items: center; */
   table {
     /* width: 00px; */
-  }
-
-  .picker {
-    /* color: red; */
-    color: #777;
-  }
-  .selected {
-    color: cyan;
   }
 
   .main > th {

@@ -3,6 +3,16 @@
         display: none;
     }
 
+    /* 
+    .text-neutral {
+        color: #777;
+    }
+
+    .selected {
+        color: white;
+        font-weight: bold;
+    } */
+
     h1 {
         margin-top: 0;
         margin-bottom: 0;
