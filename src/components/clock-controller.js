@@ -1,5 +1,5 @@
 // import React from 'react';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import Picker from "react-mobile-picker";
 import Clock from "react-live-clock";
@@ -15,19 +15,70 @@ const nums = Array.from({ length: 10 }, (_, i) => i);
 const nums_lim = Array.from({ length: 6 }, (_, i) => i);
 
 // selections
-const selections_hour = { p0: nums_lim, p1: nums };
-const selections_min = { p0: nums_lim, p1: nums };
-const selections_sec = { p0: nums_lim, p1: nums };
+// const selections_hour = { p0: nums_lim, p1: nums };
+// const selections_min = { p0: nums_lim, p1: nums };
+// const selections_sec = { p0: nums_lim, p1: nums };
+
+function renderOptions(options, selectedColor) {
+  return options.map((option) => (
+    <Picker.Item key={option} value={option}>
+      {({ selected }) => (
+        <div
+          className={
+            selected ? `font-semibold ${selectedColor}` : "text-neutral-400"
+          }
+        >
+          {option}
+        </div>
+      )}
+    </Picker.Item>
+  ));
+}
 
 // nums_lim.at(-1) // Array: access last index
 function ClockController() {
+  const [selections_hour, setSelection_hour] = useState({
+    p0: nums_lim,
+    p1: nums,
+  });
+  const [selections_min, setSelection_min] = useState({
+    p0: nums_lim,
+    p1: nums,
+  });
+  const [selections_sec, setSelection_sec] = useState({
+    p0: nums_lim,
+    p1: nums,
+  });
+
   const [pickerHourValue, setPickerHourValue] = useState({ p0: 0, p1: 0 });
   const [pickerMinValue, setPickerMinValue] = useState({ p0: 0, p1: 0 });
   const [pickerSecValue, setPickerSecValue] = useState({ p0: 0, p1: 0 });
+  const [mode, setMode] = useState(0);
   const [clock, setClock] = useState("");
+  const [reminder, setReminder] = useState([]);
 
+  // update clock / check timer & alert
+  useEffect(() => {
+    if (mode == 0) {
+      let s = "";
+      s = clock.slice(0, 2);
+      setPickerHourValue({
+        p0: Number(clock.slice(0, 1)),
+        p1: Number(clock.slice(1, 2)),
+      });
+      setPickerMinValue({
+        p0: Number(clock.slice(3, 4)),
+        p1: Number(clock.slice(4, 5)),
+      });
+      setPickerSecValue({
+        p0: Number(clock.slice(6, 7)),
+        p1: Number(clock.slice(7, 8)),
+      });
+    }
+  }, [clock]);
+
+  // auto update clock variable
   const onChangeClockTime = (t) => {
-    // setClock(t);
     // console.log(t); // 1754053077959
 
     const date = new Date(t);
@@ -36,21 +87,30 @@ function ClockController() {
     const m = String(date.getMinutes()).padStart(2, "0");
     const s = String(date.getSeconds()).padStart(2, "0");
 
-    const formattedTime = `${h}:${m}:${s}`;
-
-    setClock(formattedTime);
-    console.log(clock);
+    setClock(`${h}:${m}:${s}`);
   };
 
   const onClickResetBtn = () => {
     setPickerHourValue({ p0: 0, p1: 0 });
     setPickerMinValue({ p0: 0, p1: 0 });
     setPickerSecValue({ p0: 0, p1: 0 });
-    // console.log("Reset Time");
+  };
+
+  const onClickAlarmBtn = () => {
+    let obj = [];
+
+    // insert processing logic
+
+    setReminder([...reminder, obj]);
+    return null;
+  };
+
+  const onClickStartBtn = () => {
+    return null;
   };
 
   const onClickValueBtn = (n, type) => {
-    let value = null;
+    let value = 0;
 
     if (type === "h")
       value = Number(`${pickerHourValue.p0}${pickerHourValue.p1}`);
@@ -103,24 +163,49 @@ function ClockController() {
       console.error(
         `Something went wrong (from onClickValueBtn, set values)\n${n}${type}`
       );
-
-    // console.log(`pressed: ${n}${type}\nprev/new: ${value}`);
   };
 
   return (
     <div className="ClockController">
       {/* <h1>Current Time</h1> */}
+
+      {/* clock area */}
       <Clock
+        className="hidden"
         format={"HH:mm:ss"}
         style={{ fontSize: "4em" }}
         ticking={true}
         onChange={onChangeClockTime}
       />
-      <div>
-        {/* <h1>Time Setup</h1> */}
-        <button onClick={() => onClickResetBtn}>Reset</button>
-      </div>
 
+      <div></div>
+
+      {/* button area */}
+      <TableWrapper>
+        <table className="main">
+          <tbody>
+            <tr>
+              <td>
+                <button onClick={onClickResetBtn}>Reset</button>
+              </td>
+              <td>
+                <button>Alarm</button>
+              </td>
+              <td>
+                <button>Start</button>
+              </td>
+              <td>
+                <button>Stop</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        {/* <h1>Time Setup</h1> */}
+      </TableWrapper>
+
+      <div></div>
+
+      {/* time picker area */}
       <PickerWrapper>
         <div>
           <table>
@@ -179,12 +264,13 @@ function ClockController() {
                     onChange={setPickerSecValue}
                     wheelMode={wheelmod}
                     // style={pickerStyle}
+                    className="picker"
                   >
                     {Object.keys(selections_sec).map((name) => (
                       <Picker.Column key={name} name={name}>
                         {selections_sec[name].map((option) => (
                           <Picker.Item key={option} value={option}>
-                            {option}
+                            <p className="selected">{option}</p>
                           </Picker.Item>
                         ))}
                       </Picker.Column>
@@ -199,6 +285,7 @@ function ClockController() {
 
       <br></br>
 
+      {/* button area */}
       <TableWrapper>
         <table>
           <tbody>
@@ -248,19 +335,21 @@ function ClockController() {
                 <button onClick={() => onClickValueBtn(30, "m")}>30m</button>
               </td>
             </tr>
-            <td></td>
-            <td></td>
-            <td>
-              <button onClick={() => onClickValueBtn(1, "h")}>1h</button>
-            </td>
-            <td>
-              <button onClick={() => onClickValueBtn(2, "h")}>2h</button>
-            </td>
-            <td>
-              <button onClick={() => onClickValueBtn(3, "h")}>3h</button>
-            </td>
-            <td></td>
-            <td></td>
+            <tr>
+              <td></td>
+              <td></td>
+              <td>
+                <button onClick={() => onClickValueBtn(1, "h")}>1h</button>
+              </td>
+              <td>
+                <button onClick={() => onClickValueBtn(2, "h")}>2h</button>
+              </td>
+              <td>
+                <button onClick={() => onClickValueBtn(3, "h")}>3h</button>
+              </td>
+              <td></td>
+              <td></td>
+            </tr>
           </tbody>
         </table>
       </TableWrapper>
@@ -271,6 +360,7 @@ function ClockController() {
 export default ClockController;
 
 const PickerWrapper = styled.div`
+  font-size: 20px;
   /* width: 100px; */
   /* display: flex; */
   /* position: absolute; */
@@ -284,22 +374,41 @@ const PickerWrapper = styled.div`
   table {
     /* width: 00px; */
   }
+
+  .picker {
+    /* color: red; */
+    color: #777;
+  }
+  .selected {
+    color: cyan;
+  }
+
+  .main > th {
+    width: 300px;
+  }
+
   td.col {
     font-size: 20px;
   }
   td.pkc {
-    font-size: 20px;
-    width: 100px;
+    font-size: 25px;
+    width: 90px;
     /* padding-left: 30px;
     padding-right: 30px; */
   }
   td.pkch {
-    width: 140px;
+    /* width: 140px; */
   }
 `;
 
 const TableWrapper = styled.div`
+  /* font-size: 20px; */
   display: inline-block;
+  button {
+    font-size: 20px;
+    width: 100%;
+    height: 100%;
+  }
 `;
 
 //////////////////////
