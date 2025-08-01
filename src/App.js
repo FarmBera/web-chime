@@ -1,23 +1,34 @@
-import logo from './logo.svg';
-import './App.css';
+// import React from 'react';
+import styled from "styled-components";
+import Clock from "react-live-clock";
+
+import "./App.css";
+import Lists from "./components/lists";
+import ClockController from "./components/clock-controller";
+import Buttons from "./components/button";
+import Headers from "./components/header";
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Headers />
+
+      <hr></hr>
+
+      <p>Current Time</p>
+      <Clock format={"HH:mm:ss"} style={{ fontSize: "1.5em" }} ticking={true} />
+
+      <hr></hr>
+
+      <ClockController />
+
+      <hr></hr>
+
+      <Buttons />
+
+      <hr></hr>
+
+      <Lists />
     </div>
   );
 }
