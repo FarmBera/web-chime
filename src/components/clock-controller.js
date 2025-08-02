@@ -5,7 +5,7 @@ import Picker from "react-mobile-picker";
 import Clock from "react-live-clock";
 
 import "../style/clock-controller.css";
-import Lists from "./lists";
+// import Lists from "./lists";
 
 /* Picker variables */
 // settings
@@ -329,13 +329,13 @@ function ClockController() {
     let r = reminder;
     for (let i = 0; i < r.length; i++) {
       let rr = r[i];
-
+      // reset time
       if (rr.isDone) {
         rr.time = rr.initime;
         rr.isDone = false;
         setReminder(r);
       }
-
+      // change isEnabled flag
       if (rr.id === id) {
         rr.isEnabled = !rr.isEnabled;
         setReminder(r);
@@ -567,7 +567,6 @@ const PickerWrapper = styled.div`
   /* text-align: center; */
   /* align-items: center; */
   table {
-    /* width: 00px; */
   }
 
   .main > th {
@@ -580,8 +579,6 @@ const PickerWrapper = styled.div`
   td.pkc {
     font-size: 25px;
     width: 90px;
-    /* padding-left: 30px;
-    padding-right: 30px; */
   }
   td.pkch {
     /* width: 140px; */
@@ -614,15 +611,7 @@ const ListWrapper = styled.div`
   .body {
     border: 1px solid #fff;
     width: 200px;
-    /* height: auto; */
-    text-align: center;
-    align-items: center;
     margin: 0 auto;
-    /* display: inline-block; */
-    /* display: flexbox; */
-    /* justify-content: center; */
-    /* display: grid; */
-    /* grid-template-columns: 1fr 1fr 1fr; */
   }
 
   button {
