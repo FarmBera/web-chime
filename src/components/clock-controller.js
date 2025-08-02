@@ -5,6 +5,7 @@ import Picker from "react-mobile-picker";
 import Clock from "react-live-clock";
 
 import "../style/clock-controller.css";
+import Lists from "./lists";
 
 /* Picker variables */
 // settings
@@ -30,6 +31,36 @@ function renderOptions(selections) {
   ));
 }
 
+function convertToTimeStr(t) {
+  const diff = new Date(t);
+  // console.log(diff);
+
+  const h = String(diff.getHours()).padStart(2, "0");
+  const m = String(diff.getMinutes()).padStart(2, "0");
+  const s = String(diff.getSeconds()).padStart(2, "0");
+
+  // console.log(`${h}${m}${s}`);
+  return `${h}${m}${s}`;
+}
+function convertToUnixTime(str) {
+  const obj = new Date(str);
+  console.log(obj, "(from convertToUnixTime)");
+  return obj;
+}
+
+function getMode(m) {
+  switch (m) {
+    case 0:
+      return "Clock";
+    case 1:
+      return "Custom Time";
+    default:
+      return null;
+  }
+}
+
+let GLOBAL_ID = 3;
+
 // nums_lim.at(-1) // Array: access last index
 function ClockController() {
   const [selections_hour, setSelection_hour] = useState({
@@ -52,36 +83,96 @@ function ClockController() {
    * 0: clock
    * 1: custom time (timer)
    */
-  const [mode, setMode] = useState(0);
-  const [clock, setClock] = useState("");
-  const [reminder, setReminder] = useState([]);
+  const [mode, setMode] = useState(0); //TODO: rollback to '0'
+  const [clock, setClock] = useState();
+  const [reminder, setReminder] = useState([
+    {
+      id: 0,
+      initime: "00:00:10",
+      time: "00:00:10",
+      isEnabled: false,
+      isAlarm: false,
+      isDone: false,
+      note: null,
+    },
+  ]); //TODO: rollback to '[]'
 
   // on first loading
   // useEffect(() => {}, []);
 
   // update clock / check timer & alert
   useEffect(() => {
-    if (mode == 0) {
-      let s = "";
-      s = clock.slice(0, 2);
-      setPickerHourValue({
-        p0: Number(clock.slice(0, 1)),
-        p1: Number(clock.slice(1, 2)),
-      });
-      setPickerMinValue({
-        p0: Number(clock.slice(3, 4)),
-        p1: Number(clock.slice(4, 5)),
-      });
-      setPickerSecValue({
-        p0: Number(clock.slice(6, 7)),
-        p1: Number(clock.slice(7, 8)),
-      });
+    // update clock continuously
+    if (mode === 0) {
+      try {
+        setPickerHourValue({
+          p0: Number(clock.slice(0, 1)),
+          p1: Number(clock.slice(1, 2)),
+        });
+        setPickerMinValue({
+          p0: Number(clock.slice(3, 4)),
+          p1: Number(clock.slice(4, 5)),
+        });
+        setPickerSecValue({
+          p0: Number(clock.slice(6, 7)),
+          p1: Number(clock.slice(7, 8)),
+        });
+      } catch (e) {
+        return;
+      }
     }
+
+    let r = reminder;
+    for (let i = 0; i < r.length; i++) {
+      // not enabled
+      if (!r[i].isEnabled) continue;
+
+      // check alarm time
+      if (r[i].isAlarm && r[i].isEnabled) {
+        if (clock.slice(0, 6) === r[i].time.slice(0, 6)) {
+          console.log("Alarm Activated:", r[i].time);
+          // TODO: notify
+          r[i].isEnabled = false;
+          r[i].isDone = true;
+        }
+      }
+
+      // skip alarm
+      if (r[i].isAlarm) continue;
+
+      // (for timer only)
+      let h, m, s;
+      let t = r[i].time.split(":");
+
+      h = Number(t[0]);
+      m = Number(t[1]);
+      s = Number(t[2]);
+
+      if (--s < 0) {
+        s = 59;
+        if (--m < 0) {
+          m = 59;
+          if (--h < 0) {
+            console.log("END TIMER");
+            r[i].isEnabled = false;
+            r[i].isDone = true;
+            // TODO: notify
+            continue;
+          }
+        }
+      }
+
+      r[i].time = `${String(h).padStart(2, "0")}:${String(m).padStart(
+        2,
+        "0"
+      )}:${String(s).padStart(2, "0")}`;
+    }
+    setReminder(r);
   }, [clock]);
 
   // on change mode
   useEffect(() => {
-    if (mode == 0) {
+    if (mode === 0) {
       setSelection_hour({
         p0: Array.from({ length: 3 }, (_, i) => i),
         p1: nums,
@@ -93,7 +184,7 @@ function ClockController() {
       });
     }
 
-    if (mode != 0) onClickResetBtn();
+    if (mode !== 0) onClickResetBtn();
   }, [mode]);
 
   // auto update clock variable
@@ -110,6 +201,7 @@ function ClockController() {
   };
 
   const onClickResetBtn = () => {
+    if (mode === 0) return;
     setPickerHourValue({ p0: 0, p1: 0 });
     setPickerMinValue({ p0: 0, p1: 0 });
     setPickerSecValue({ p0: 0, p1: 0 });
@@ -125,20 +217,45 @@ function ClockController() {
     setMode(m);
   };
 
+  const AddObject = (obj) => {
+    obj = [...reminder, obj];
+    console.log(obj);
+
+    setReminder(obj);
+    onClickResetBtn();
+  };
   const onClickAlarmBtn = () => {
-    let obj = [];
+    if (mode === 0) return;
 
-    // insert processing logic
+    const t = `${pickerHourValue.p0}${pickerHourValue.p1}:${pickerMinValue.p0}${pickerMinValue.p1}:${pickerSecValue.p0}${pickerSecValue.p1}`;
 
-    setReminder([...reminder, obj]);
-    return null;
+    let obj = {
+      id: ++GLOBAL_ID,
+      initime: t,
+      time: t,
+      isEnabled: true,
+      isAlarm: true,
+      isDone: false,
+      note: null,
+    };
+    AddObject(obj);
   };
+  const onClickTimerBtn = () => {
+    if (mode === 0) return;
 
-  const onClickStartBtn = () => {
-    return null;
+    const t = `${pickerHourValue.p0}${pickerHourValue.p1}:${pickerMinValue.p0}${pickerMinValue.p1}:${pickerSecValue.p0}${pickerSecValue.p1}`;
+
+    let obj = {
+      id: ++GLOBAL_ID,
+      initime: t,
+      time: t,
+      isEnabled: true,
+      isAlarm: false,
+      isDone: false,
+      note: null,
+    };
+    AddObject(obj);
   };
-
-  const onClickStopBtn = () => {};
 
   const onClickValueBtn = (n, type) => {
     let value = 0;
@@ -196,6 +313,37 @@ function ClockController() {
       );
   };
 
+  // on click list area
+  const onClickListDelBtn = (id) => {
+    let r = reminder;
+    for (let i = 0; i < r.length; i++) {
+      if (r[i].id === id) {
+        console.log(id, r[i].id);
+        r.splice(i, 1);
+        setReminder(r);
+        break;
+      }
+    }
+  };
+  const onClickListStartBtn = (id) => {
+    let r = reminder;
+    for (let i = 0; i < r.length; i++) {
+      let rr = r[i];
+
+      if (rr.isDone) {
+        rr.time = rr.initime;
+        rr.isDone = false;
+        setReminder(r);
+      }
+
+      if (rr.id === id) {
+        rr.isEnabled = !rr.isEnabled;
+        setReminder(r);
+        break;
+      }
+    }
+  };
+
   return (
     <div className="ClockController">
       {/* <h1>Current Time</h1> */}
@@ -210,9 +358,9 @@ function ClockController() {
       />
 
       <div></div>
-      <p>Mode: {mode}</p>
+      <p>Mode: {getMode(mode)}</p>
 
-      {/* button area */}
+      {/* main button area */}
       <TableWrapper>
         <table className="main">
           <tbody>
@@ -223,14 +371,12 @@ function ClockController() {
               <td>
                 <button onClick={onClickModeBtn}>Mode</button>
               </td>
+              {/* <td><button>Start</button></td><td><button>Stop</button></td> */}
               <td>
-                <button>Start</button>
+                <button onClick={onClickAlarmBtn}>Alarm</button>
               </td>
               <td>
-                <button>Stop</button>
-              </td>
-              <td>
-                <button>Alarm</button>
+                <button onClick={onClickTimerBtn}>Timer</button>
               </td>
             </tr>
           </tbody>
@@ -292,7 +438,7 @@ function ClockController() {
 
       <br></br>
 
-      {/* button area */}
+      {/* time button area */}
       <TableWrapper>
         <table>
           <tbody>
@@ -360,6 +506,38 @@ function ClockController() {
           </tbody>
         </table>
       </TableWrapper>
+
+      <hr></hr>
+
+      {/* timer, alarm list area */}
+      <h2>Alert List Area</h2>
+      <ListWrapper>
+        {reminder.length === 0 ? (
+          <h3>Reminder is Empty!</h3>
+        ) : (
+          reminder.map((item) => (
+            <div className="body" key={item.id}>
+              <p className="time">{item.isDone ? item.initime : item.time}</p>
+              <p>/</p>
+              {/* <p>{convertToTimeStr(clock, item.time)}</p> */}
+              <p className="isEnabled">{String(item.isEnabled)}</p>
+              <br></br>
+              <p>{item.isAlarm ? "Alarm" : "Timer"} </p>
+              <p>/</p>
+              <p className="note">{String(item.note)}</p>
+              <br></br>
+              <p>{String(item.isDone)}</p>
+              <button
+                className={item.isEnabled ? "stop" : "start"}
+                onClick={() => onClickListStartBtn(item.id)}
+              >
+                {item.isEnabled ? "Stop" : "Start"}
+              </button>
+              <button onClick={() => onClickListDelBtn(item.id)}>Del</button>
+            </div>
+          ))
+        )}
+      </ListWrapper>
     </div>
   );
 }
@@ -413,43 +591,61 @@ const PickerWrapper = styled.div`
 const TableWrapper = styled.div`
   /* font-size: 20px; */
   display: inline-block;
+
   button {
+    background-color: #282c34;
+    color: lavender;
+    border: 0.5px solid;
+    /* border: none; */
     font-size: 20px;
     width: 100%;
     height: 100%;
   }
+  button:hover {
+    background-color: #61dafb;
+    color: #000;
+  }
+  button:active {
+    background-color: yellow;
+  }
 `;
 
-//////////////////////
-// import { useState } from "react";
-// import Picker from "react-mobile-picker";
+const ListWrapper = styled.div`
+  .body {
+    border: 1px solid #fff;
+    width: 200px;
+    /* height: auto; */
+    text-align: center;
+    align-items: center;
+    margin: 0 auto;
+    /* display: inline-block; */
+    /* display: flexbox; */
+    /* justify-content: center; */
+    /* display: grid; */
+    /* grid-template-columns: 1fr 1fr 1fr; */
+  }
 
-// const selections = {
-//   title: ["Mr.", "Mrs.", "Ms.", "Dr."],
-//   firstName: ["John", "Micheal", "Elizabeth"],
-//   lastName: ["Lennon", "Jackson", "Jordan", "Legend", "Taylor"],
-// };
+  button {
+    background-color: #282c34;
+    color: #fff;
+    border: 1px solid #fff;
+  }
+  button:hover {
+    background-color: #61dafb;
+    color: #000;
+  }
 
-// function MyPicker() {
-//   const [pickerValue, setPickerValue] = useState({
-//     title: "Mr.",
-//     firstName: "Micheal",
-//     lastName: "Jordan",
-//   });
+  p {
+    display: inline-table;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 
-//   return (
-//     <Picker value={pickerValue} onChange={setPickerValue}>
-//       {Object.keys(selections).map((name) => (
-//         <Picker.Column key={name} name={name}>
-//           {selections[name].map((option) => (
-//             <Picker.Item key={option} value={option}>
-//               {option}
-//             </Picker.Item>
-//           ))}
-//         </Picker.Column>
-//       ))}
-//     </Picker>
-//   );
-// }
-
-// export default MyPicker;
+  .start {
+    background-color: yellowgreen;
+    color: #000;
+  }
+  .stop {
+    background-color: orange;
+  }
+`;

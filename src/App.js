@@ -15,10 +15,6 @@ function App() {
       <hr></hr>
 
       <ClockController />
-
-      <hr></hr>
-
-      <Lists />
     </div>
   );
 }
