@@ -2,8 +2,17 @@ import { useEffect, useState } from "react";
 import styled from "styled-components";
 import Picker from "react-mobile-picker";
 import Clock from "react-live-clock";
+import useSound from "use-sound";
 
 import "../style/clock-controller.css";
+
+// sounds
+// import sfx_hintblock from "../audio/hintBlock.mp3";
+// import sfx_loa_bell from "../audio/loa_sfx_bell.wav";
+import ui_click_active from "../audio/pop-down.mp3";
+import ui_click_after_up from "../audio/pop-up-on.mp3";
+import ui_click_hover from "../audio/ui-click-hover.wav";
+import sfx_alert from "../audio/s-tickles.mp3";
 
 /* Picker variables */
 // settings
@@ -51,6 +60,8 @@ function ClockController() {
   const [pickerMinValue, setPickerMinValue] = useState({ p0: 0, p1: 0 });
   const [pickerSecValue, setPickerSecValue] = useState({ p0: 0, p1: 0 });
 
+  const [chimeCycle, setChimeCycle] = useState(60);
+
   /** mode desc
    * 0: clock
    * 1: custom time (timer)
@@ -68,6 +79,11 @@ function ClockController() {
       note: null,
     },
   ]); //TODO: rollback to '[]'
+
+  // const [sfxUIHover] = useSound(ui_click_hover);
+  const [sfxUIActive] = useSound(ui_click_active);
+  const [sfxUIAfterUp] = useSound(ui_click_after_up);
+  const [sfxAlert] = useSound(sfx_alert);
 
   // update clock / check timer & alert
   useEffect(() => {
@@ -102,7 +118,7 @@ function ClockController() {
       if (rr.isAlarm && rr.isEnabled) {
         if (clock.slice(0, 6) === rr.time.slice(0, 6)) {
           console.log("Alarm Activated:", rr.time);
-          // TODO: notify
+          sfxAlert();
           rr.isEnabled = false;
           rr.isDone = true;
           IS_UPDATED = true;
@@ -110,7 +126,7 @@ function ClockController() {
       }
     }
     if (IS_UPDATED) setReminder(r);
-  }, [clock, mode, reminder]);
+  }, [clock, mode, reminder, sfxAlert]);
 
   // on change mode
   useEffect(() => {
@@ -185,6 +201,10 @@ function ClockController() {
     AddObject(obj);
   };
 
+  // chime cycle handler
+  const onChangeSelection = (e) => {
+    console.log(e);
+  };
   // time buttons
   const onClickValueBtn = (n, type) => {
     if (mode === 0) return;
@@ -270,7 +290,13 @@ function ClockController() {
           <tbody>
             <tr>
               <td>
-                <button onClick={onClickResetBtn} className={BTN_STATE[mode]}>
+                <button
+                  onClick={onClickResetBtn}
+                  onMouseDown={sfxUIActive}
+                  onMouseUp={sfxUIAfterUp}
+                  // onMouseEnter={sfxUIHover}
+                  className={BTN_STATE[mode]}
+                >
                   Reset
                 </button>
               </td>
@@ -294,6 +320,37 @@ function ClockController() {
       </TableWrapper>
 
       <br></br>
+
+      <SelectorWrapper>
+        <label className="label">Chime Cycle: </label>
+
+        <select className="selection" onChange={(e) => onChangeSelection(e)}>
+          <optgroup label="">
+            <option value="none">None</option>
+          </optgroup>
+          <optgroup label="Minute">
+            <option value="1">1m</option>
+            <option value="5">5m</option>
+            <option value="10">10m</option>
+            <option value="15">15m</option>
+            <option value="30">30m</option>
+          </optgroup>
+          <optgroup label="Hour">
+            <option value="60" selected>
+              1h
+            </option>
+            <option value="120">2h</option>
+            <option value="180">3h</option>
+            <option value="240">4h</option>
+            <option value="300">5h</option>
+          </optgroup>
+          <optgroup label="Custom">
+            <option value="custom">Custom</option>
+          </optgroup>
+        </select>
+      </SelectorWrapper>
+
+      <div></div>
 
       {/* time picker area */}
       <PickerWrapper>
@@ -423,7 +480,7 @@ function ClockController() {
       <hr></hr>
 
       {/* timer, alarm list area */}
-      <h2>Alert List Area</h2>
+      <h2>Alert List</h2>
       <ListWrapper>
         {reminder.length === 0 ? (
           <div>
@@ -459,16 +516,10 @@ function ClockController() {
 
 export default ClockController;
 
-const colorBg = "282c34";
+const colorBg = "#282c34";
 const PickerWrapper = styled.div`
   font-size: 20px;
-  /* width: 100px; */
-  /* display: flex; */
-  /* position: absolute; */
   display: inline-block;
-  /* display: table-column; */
-  /* grid-template-columns: 1fr 1fr 1fr; */
-  /* grid-template-rows: 1fr 1fr 1fr; */
 
   .text-neutral {
     color: #666;
@@ -479,9 +530,6 @@ const PickerWrapper = styled.div`
     font-weight: bold;
   }
 
-  /* size: 20px; */
-  /* text-align: center; */
-  /* align-items: center; */
   table {
   }
 
@@ -506,7 +554,7 @@ const TableWrapper = styled.div`
   display: inline-block;
 
   button {
-    background-color: #${colorBg};
+    background-color: ${colorBg};
     color: lavender;
     border: 0.5px solid;
     /* border: none; */
@@ -520,6 +568,13 @@ const TableWrapper = styled.div`
   }
   button:active {
     background-color: yellow;
+  }
+`;
+
+const SelectorWrapper = styled.div`
+  .selection {
+    background-color: ${colorBg};
+    color: #fff;
   }
 `;
 
