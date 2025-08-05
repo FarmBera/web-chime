@@ -1,10 +1,7 @@
-// import React from 'react';
-import styled from "styled-components";
-
 function Headers() {
   return (
     <div className="Headers">
-      <header>Header Area</header>
+      <p>Web-Chime Prototype (v0.1-alpha)</p>
     </div>
   );
 }
