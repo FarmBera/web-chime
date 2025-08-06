@@ -11,8 +11,9 @@ import "../style/clock-controller.css";
 // import sfx_loa_bell from "../audio/loa_sfx_bell.wav";
 import ui_click_active from "../audio/pop-down.mp3";
 import ui_click_after_up from "../audio/pop-up-on.mp3";
-import ui_click_hover from "../audio/ui-click-hover.wav";
+// import ui_click_hover from "../audio/ui-click-hover.wav";
 import sfx_alert from "../audio/s-tickles.mp3";
+import sfx_alert2 from "../audio/loa_sfx_bell.wav";
 
 /* Picker variables */
 // settings
@@ -60,7 +61,7 @@ function ClockController() {
   const [pickerMinValue, setPickerMinValue] = useState({ p0: 0, p1: 0 });
   const [pickerSecValue, setPickerSecValue] = useState({ p0: 0, p1: 0 });
 
-  const [chimeCycle, setChimeCycle] = useState(60);
+  const [chimeCycle, setChimeCycle] = useState("60");
 
   /** mode desc
    * 0: clock
@@ -68,24 +69,15 @@ function ClockController() {
    */
   const [mode, setMode] = useState(0);
   const [clock, setClock] = useState();
-  const [reminder, setReminder] = useState([
-    {
-      id: 0,
-      initime: "00:00:10",
-      time: "00:00:10",
-      isEnabled: false,
-      isAlarm: true,
-      isDone: false,
-      note: null,
-    },
-  ]); //TODO: rollback to '[]'
+  const [reminder, setReminder] = useState([]);
 
   // const [sfxUIHover] = useSound(ui_click_hover);
-  const [sfxUIActive] = useSound(ui_click_active);
-  const [sfxUIAfterUp] = useSound(ui_click_after_up);
-  const [sfxAlert] = useSound(sfx_alert);
+  const [sfxUIActive] = useSound(ui_click_active, { volume: 0.25 });
+  const [sfxUIAfterUp] = useSound(ui_click_after_up, { volume: 0.25 });
+  const [sfxNoti] = useSound(sfx_alert);
+  const [sfxChime] = useSound(sfx_alert2);
 
-  // update clock / check timer & alert
+  // update clock / check alarm
   useEffect(() => {
     // update clock continuously
     if (mode === 0) {
@@ -116,9 +108,10 @@ function ClockController() {
 
       // check alarm time
       if (rr.isAlarm && rr.isEnabled) {
-        if (clock.slice(0, 6) === rr.time.slice(0, 6)) {
+        // if (clock.slice(0, 6) === rr.time.slice(0, 6)) {//minute alarm
+        if (clock === rr.time) {
           console.log("Alarm Activated:", rr.time);
-          sfxAlert();
+          sfxNoti();
           rr.isEnabled = false;
           rr.isDone = true;
           IS_UPDATED = true;
@@ -126,24 +119,44 @@ function ClockController() {
       }
     }
     if (IS_UPDATED) setReminder(r);
-  }, [clock, mode, reminder, sfxAlert]);
+  }, [clock, mode, reminder, sfxNoti]);
 
-  // on change mode
+  // on change mode; deprecated useEffect
+
+  // chime func
   useEffect(() => {
-    onClickResetBtn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+    // chime disabled
+    if (chimeCycle === "none" || !clock) return;
+
+    const [h, m, s] = clock.split(":").map(Number);
+    if (s !== 0) return; // only alert at 0 sec
+
+    // convert selected cycle; 선택된 주기를 분 단위의 숫자로 변환
+    const cycleInMinutes = parseInt(chimeCycle, 10);
+
+    // hour chime
+    if (cycleInMinutes >= 60) {
+      const cycleInHours = cycleInMinutes / 60;
+      if (m === 0 && h % cycleInHours === 0) {
+        console.log(`Hour Chime: Every ${cycleInHours}h at ${clock}`);
+        sfxChime();
+      }
+    }
+    // minute chime
+    else {
+      if (m % cycleInMinutes === 0) {
+        console.log(`Minute Chime: Every ${cycleInMinutes}m at ${clock}`);
+        sfxChime();
+      }
+    }
+  }, [clock, chimeCycle, sfxChime]);
 
   // auto update clock variable
   const onChangeClockTime = (t) => {
-    // console.log(t); // 1754053077959
-
     const date = new Date(t);
-
     const h = String(date.getHours()).padStart(2, "0");
     const m = String(date.getMinutes()).padStart(2, "0");
     const s = String(date.getSeconds()).padStart(2, "0");
-
     setClock(`${h}:${m}:${s}`);
   };
 
@@ -154,13 +167,11 @@ function ClockController() {
     setPickerMinValue({ p0: 0, p1: 0 });
     setPickerSecValue({ p0: 0, p1: 0 });
   };
-
   const onClickModeBtn = () => {
     let m = mode;
     if (++m > 1) setMode(0);
     else setMode(m);
   };
-
   const onClickCurrBtn = () => {
     if (mode === 0) return;
     const t = clock.split(":");
@@ -179,16 +190,12 @@ function ClockController() {
   };
   const AddObject = (obj) => {
     obj = [...reminder, obj];
-    // console.log(obj);
-
     setReminder(obj);
     onClickResetBtn();
   };
   const onClickAlarmBtn = () => {
     if (mode === 0) return;
-
     const t = `${pickerHourValue.p0}${pickerHourValue.p1}:${pickerMinValue.p0}${pickerMinValue.p1}:${pickerSecValue.p0}${pickerSecValue.p1}`;
-
     let obj = {
       id: ++GLOBAL_ID,
       initime: t,
@@ -202,9 +209,11 @@ function ClockController() {
   };
 
   // chime cycle handler
-  const onChangeSelection = (e) => {
-    console.log(e);
+  const onChangeSelection = (v) => {
+    console.log("Chime Changed:", v);
+    setChimeCycle(v);
   };
+
   // time buttons
   const onClickValueBtn = (n, type) => {
     if (mode === 0) return;
@@ -243,7 +252,6 @@ function ClockController() {
     let r = reminder;
     for (let i = 0; i < r.length; i++) {
       if (r[i].id === id) {
-        // console.log(id, r[i].id);
         r.splice(i, 1);
         setReminder(r);
         break;
@@ -271,8 +279,6 @@ function ClockController() {
 
   return (
     <div className="ClockController">
-      {/* <h1>Current Time</h1> */}
-
       {/* clock area */}
       <Clock
         className="hidden"
@@ -281,8 +287,6 @@ function ClockController() {
         ticking={true}
         onChange={onChangeClockTime}
       />
-
-      {/* <div></div><p>Mode: {getMode(mode)}</p> */}
 
       {/* main button area */}
       <TableWrapper>
@@ -316,15 +320,17 @@ function ClockController() {
             </tr>
           </tbody>
         </table>
-        {/* <h1>Time Setup</h1> */}
       </TableWrapper>
 
       <br></br>
 
       <SelectorWrapper>
         <label className="label">Chime Cycle: </label>
-
-        <select className="selection" onChange={(e) => onChangeSelection(e)}>
+        <select
+          className="selection"
+          value={String(chimeCycle)}
+          onChange={(e) => onChangeSelection(e.target.value)}
+        >
           <optgroup label="">
             <option value="none">None</option>
           </optgroup>
@@ -336,13 +342,14 @@ function ClockController() {
             <option value="30">30m</option>
           </optgroup>
           <optgroup label="Hour">
-            <option value="60" selected>
+            <option value="60" defaultChecked={true}>
               1h
             </option>
             <option value="120">2h</option>
             <option value="180">3h</option>
             <option value="240">4h</option>
             <option value="300">5h</option>
+            <option value="360">6h</option>
           </optgroup>
           <optgroup label="Custom">
             <option value="custom">Custom</option>
@@ -350,7 +357,7 @@ function ClockController() {
         </select>
       </SelectorWrapper>
 
-      <div></div>
+      <br></br>
 
       {/* time picker area */}
       <PickerWrapper>
