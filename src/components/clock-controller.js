@@ -121,8 +121,6 @@ function ClockController() {
     if (IS_UPDATED) setReminder(r);
   }, [clock, mode, reminder, sfxNoti]);
 
-  // on change mode; deprecated useEffect
-
   // chime func
   useEffect(() => {
     // chime disabled
