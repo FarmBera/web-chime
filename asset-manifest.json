@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/web-chime-public/static/css/main.88a86bfe.css",
+    "main.js": "/web-chime-public/static/js/main.359e4bc3.js",
+    "static/js/718.4dfdbfb3.chunk.js": "/web-chime-public/static/js/718.4dfdbfb3.chunk.js",
+    "static/js/206.4374631f.chunk.js": "/web-chime-public/static/js/206.4374631f.chunk.js",
+    "static/media/loa_sfx_bell.wav": "/web-chime-public/static/media/loa_sfx_bell.61a500e3348c1071a5cc.wav",
+    "static/media/s-tickles.mp3": "/web-chime-public/static/media/s-tickles.6bb44b9b1575f7625f1a.mp3",
+    "static/media/pop-down.mp3": "/web-chime-public/static/media/pop-down.cc0a5518c9c63592453b.mp3",
+    "static/media/pop-up-on.mp3": "/web-chime-public/static/media/pop-up-on.b776a1eff9299387d55c.mp3",
+    "index.html": "/web-chime-public/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.88a86bfe.css",
+    "static/js/main.359e4bc3.js"
+  ]
+}
